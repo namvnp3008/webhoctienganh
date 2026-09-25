@@ -1,0 +1,359 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  student
+  admin
+}
+
+enum UserStatus {
+  active
+  locked
+}
+
+enum TestSkill {
+  full
+  listening
+  reading
+  writing
+  speaking
+}
+
+enum TestStatus {
+  draft
+  published
+  hidden
+}
+
+enum AnswerVisibility {
+  show_after_submit
+  hidden
+  scheduled
+}
+
+enum AnswerHideLevel {
+  keep_correctness
+  score_only
+}
+
+enum QuestionType {
+  single_choice
+  multiple_choice
+  fill_blank
+  matching
+  true_false_ng
+  writing
+  speaking
+}
+
+enum AttemptStatus {
+  in_progress
+  submitted
+  graded
+}
+
+enum ReviewStatus {
+  draft
+  final
+}
+
+model User {
+  id                String         @id @default(uuid()) @db.Uuid
+  email             String         @unique @db.VarChar(255)
+  passwordHash      String?        @map("password_hash") @db.VarChar(255)
+  fullName          String         @map("full_name") @db.VarChar(100)
+  avatarUrl         String?        @map("avatar_url")
+  role              Role           @default(student)
+  status            UserStatus     @default(active)
+  isOwner           Boolean        @default(false) @map("is_owner")
+  dailyAiQuota      Int            @default(20) @map("daily_ai_quota")
+  createdTests      Test[]         @relation("CreatedByTeacher")
+  attempts          Attempt[]
+  classesOwned      Class[]        @relation("TeacherClasses")
+  coursesOwned      Course[]       @relation("TeacherCourses")
+  classEnrollments  ClassMember[]
+  courseEnrollments CourseMember[]
+  reviewsDone       Review[]       @relation("TeacherReviews")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("users")
+}
+
+model ExamType {
+  id                     String   @id @db.VarChar(50)
+  name                   String   @db.VarChar(100)
+  allowedQuestionTypes   Json     @map("allowed_question_types")
+  defaultStructure       Json     @map("default_structure")
+  scoringRules           Json     @map("scoring_rules")
+  defaultWritingRubricId String?  @map("default_writing_rubric_id") @db.Uuid
+  defaultSpeakingRubricId String? @map("default_speaking_rubric_id") @db.Uuid
+  isSystem               Boolean  @default(true) @map("is_system")
+  tests                  Test[]
+
+  @@map("exam_types")
+}
+
+model Test {
+  id                     String           @id @default(uuid()) @db.Uuid
+  title                  String           @db.VarChar(255)
+  description            String?
+  examTypeId             String           @map("exam_type_id") @db.VarChar(50)
+  examType               ExamType         @relation(fields: [examTypeId], references: [id])
+  scoringConfig          Json?            @map("scoring_config")
+  writingRubricId        String?          @map("writing_rubric_id") @db.Uuid
+  speakingRubricId       String?          @map("speaking_rubric_id") @db.Uuid
+  maxAttempts            Int?             @map("max_attempts")
+  visibility             String           @default("public") @db.VarChar(20)
+  allowStudentAiGrading  Boolean          @default(true) @map("allow_student_ai_grading")
+  maxAiGradingsPerAnswer Int              @default(2) @map("max_ai_gradings_per_answer")
+  skill                  TestSkill        @default(full)
+  difficulty             String           @default("medium") @db.VarChar(20)
+  durationMinutes        Int              @map("duration_minutes")
+  coverUrl               String?          @map("cover_url")
+  status                 TestStatus       @default(draft)
+  answerVisibility       AnswerVisibility @default(hidden) @map("answer_visibility")
+  answerHideLevel        AnswerHideLevel  @default(keep_correctness) @map("answer_hide_level")
+  answerReleaseAt        DateTime?        @map("answer_release_at") @db.Timestamptz
+  createdBy              String           @map("created_by") @db.Uuid
+  creator                User             @relation("CreatedByTeacher", fields: [createdBy], references: [id])
+  sections               Section[]
+  attempts               Attempt[]
+  courseItems            CourseItem[]
+  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("tests")
+}
+
+model Section {
+  id              String          @id @default(uuid()) @db.Uuid
+  testId          String          @map("test_id") @db.Uuid
+  test            Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  title           String          @db.VarChar(255)
+  instruction     String?
+  orderIndex      Int             @map("order_index")
+  durationMinutes Int?            @map("duration_minutes")
+  passageText     String?         @map("passage_text")
+  audioUrl        String?         @map("audio_url")
+  questionGroups  QuestionGroup[]
+
+  @@map("sections")
+}
+
+model QuestionGroup {
+  id          String     @id @default(uuid()) @db.Uuid
+  sectionId   String     @map("section_id") @db.Uuid
+  section     Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  instruction String?
+  passageText String?    @map("passage_text")
+  audioUrl    String?    @map("audio_url")
+  imageUrl    String?    @map("image_url")
+  orderIndex  Int        @map("order_index")
+  questions   Question[]
+
+  @@map("question_groups")
+}
+
+model Question {
+  id                String             @id @default(uuid()) @db.Uuid
+  groupId           String             @map("group_id") @db.Uuid
+  group             QuestionGroup      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  type              QuestionType
+  content           String
+  options           Json?
+  correctAnswers    Json?              @map("correct_answers")
+  points            Decimal            @default(1.0) @db.Decimal(5, 2)
+  explanation       String?
+  orderIndex        Int                @map("order_index")
+  attemptAnswers    AttemptAnswer[]
+  speakingResponses SpeakingResponse[]
+
+  @@map("questions")
+}
+
+model Attempt {
+  id          String          @id @default(uuid()) @db.Uuid
+  userId      String          @map("user_id") @db.Uuid
+  user        User            @relation(fields: [userId], references: [id])
+  testId      String          @map("test_id") @db.Uuid
+  test        Test            @relation(fields: [testId], references: [id])
+  attemptNo   Int             @map("attempt_no")
+  mode        String          @db.VarChar(20)
+  startedAt   DateTime        @map("started_at") @db.Timestamptz
+  expiresAt   DateTime        @map("expires_at") @db.Timestamptz
+  submittedAt DateTime?       @map("submitted_at") @db.Timestamptz
+  status      AttemptStatus   @default(in_progress)
+  totalScore  Decimal?        @map("total_score") @db.Decimal(6, 2)
+  answers     AttemptAnswer[]
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("attempts")
+}
+
+model AttemptAnswer {
+  id               String            @id @default(uuid()) @db.Uuid
+  attemptId        String            @map("attempt_id") @db.Uuid
+  attempt          Attempt           @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId       String            @map("question_id") @db.Uuid
+  question         Question          @relation(fields: [questionId], references: [id])
+  answer           Json?
+  isCorrect        Boolean?          @map("is_correct")
+  score            Decimal?          @db.Decimal(5, 2)
+  flagged          Boolean           @default(false)
+  aiGradingsUsed   Int               @default(0) @map("ai_gradings_used")
+  speakingResponse SpeakingResponse?
+  aiEvaluation     AiEvaluation?
+  review           Review?
+
+  @@map("attempt_answers")
+}
+
+model SpeakingResponse {
+  id              String        @id @default(uuid()) @db.Uuid
+  attemptAnswerId String        @unique @map("attempt_answer_id") @db.Uuid
+  attemptAnswer   AttemptAnswer @relation(fields: [attemptAnswerId], references: [id], onDelete: Cascade)
+  questionId      String        @map("question_id") @db.Uuid
+  question        Question      @relation(fields: [questionId], references: [id])
+  audioUrl        String        @map("audio_url")
+  transcript      String?
+  durationSec     Decimal       @map("duration_sec") @db.Decimal(6, 2)
+  prepUsedSec     Decimal?      @map("prep_used_sec") @db.Decimal(6, 2)
+  deleteAfter     DateTime      @map("delete_after") @db.Timestamptz
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("speaking_responses")
+}
+
+model AiEvaluation {
+  id                 String         @id @default(uuid()) @db.Uuid
+  attemptAnswerId    String         @unique @map("attempt_answer_id") @db.Uuid
+  attemptAnswer      AttemptAnswer  @relation(fields: [attemptAnswerId], references: [id], onDelete: Cascade)
+  skill              String         @db.VarChar(20)
+  requestedBy        String         @default("student") @map("requested_by") @db.VarChar(20)
+  rubricId           String?        @map("rubric_id") @db.Uuid
+  criterionScores    Json           @map("criterion_scores")
+  totalScore         Decimal        @map("total_score") @db.Decimal(5, 2)
+  feedback           String
+  annotations        Json?
+  metrics            Json?
+  reportedWrong      Boolean        @default(false) @map("reported_wrong")
+  reportNotes        String?        @map("report_notes")
+  status             String         @default("completed") @db.VarChar(20)
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  reviewsUsedAsDraft Review[]
+
+  @@map("ai_evaluations")
+}
+
+model Review {
+  id              String        @id @default(uuid()) @db.Uuid
+  attemptAnswerId String        @unique @map("attempt_answer_id") @db.Uuid
+  attemptAnswer   AttemptAnswer @relation(fields: [attemptAnswerId], references: [id], onDelete: Cascade)
+  skill           String        @db.VarChar(20)
+  reviewerId      String        @map("reviewer_id") @db.Uuid
+  reviewer        User          @relation("TeacherReviews", fields: [reviewerId], references: [id])
+  totalScore      Decimal       @map("total_score") @db.Decimal(5, 2)
+  feedback        String?
+  status          ReviewStatus  @default(draft)
+  aiEvaluationId  String?       @map("ai_evaluation_id") @db.Uuid
+  aiEvaluation    AiEvaluation? @relation(fields: [aiEvaluationId], references: [id])
+  showAiErrors    Boolean       @default(true) @map("show_ai_errors")
+  reviewedAt      DateTime      @default(now()) @map("reviewed_at") @db.Timestamptz
+  scores          ReviewScore[]
+
+  @@map("reviews")
+}
+
+model ReviewScore {
+  id          String   @id @default(uuid()) @db.Uuid
+  reviewId    String   @map("review_id") @db.Uuid
+  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  criterionId String   @map("criterion_id") @db.Uuid
+  score       Decimal  @db.Decimal(5, 2)
+  comment     String?
+
+  @@map("review_scores")
+}
+
+model Class {
+  id          String        @id @default(uuid()) @db.Uuid
+  teacherId   String        @map("teacher_id") @db.Uuid
+  teacher     User          @relation("TeacherClasses", fields: [teacherId], references: [id])
+  name        String        @db.VarChar(150)
+  description String?
+  joinCode    String        @unique @map("join_code") @db.VarChar(10)
+  status      String        @default("active") @db.VarChar(20)
+  members     ClassMember[]
+  courses     ClassCourse[]
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("classes")
+}
+
+model Course {
+  id          String         @id @default(uuid()) @db.Uuid
+  teacherId   String         @map("teacher_id") @db.Uuid
+  teacher     User           @relation("TeacherCourses", fields: [teacherId], references: [id])
+  name        String         @db.VarChar(150)
+  description String?
+  coverUrl    String?        @map("cover_url")
+  joinCode    String         @unique @map("join_code") @db.VarChar(10)
+  status      String         @default("active") @db.VarChar(20)
+  members     CourseMember[]
+  classes     ClassCourse[]
+  items       CourseItem[]
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("courses")
+}
+
+model ClassMember {
+  classId  String   @map("class_id") @db.Uuid
+  class    Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId   String   @map("user_id") @db.Uuid
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
+
+  @@id([classId, userId])
+  @@map("class_members")
+}
+
+model CourseMember {
+  courseId String   @map("course_id") @db.Uuid
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId   String   @map("user_id") @db.Uuid
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
+
+  @@id([courseId, userId])
+  @@map("course_members")
+}
+
+model ClassCourse {
+  classId  String @map("class_id") @db.Uuid
+  class    Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  courseId String @map("course_id") @db.Uuid
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([classId, courseId])
+  @@map("class_courses")
+}
+
+model CourseItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  courseId   String   @map("course_id") @db.Uuid
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  itemType   String   @map("item_type") @db.VarChar(30)
+  testId     String?  @map("test_id") @db.Uuid
+  test       Test?    @relation(fields: [testId], references: [id], onDelete: SetNull)
+  orderIndex Int      @map("order_index")
+
+  @@map("course_items")
+}

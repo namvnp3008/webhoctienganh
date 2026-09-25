@@ -53,6 +53,7 @@ flowchart LR
 | `TSK-P1-03` | Thiết kế Kiến trúc Kỹ thuật (`TECH_ARCHITECTURE.md`) | Xuất bản `TECH_ARCHITECTURE.md` chi tiết kiến trúc NestJS + React Vite, PostgreSQL Prisma schema DDL, S3 Storage, Redis BullMQ, Audio Pipeline (Azure Speech + Gemini 2.5), Interceptor chống lộ đáp án. | [x] Hoàn tất |
 | `TSK-P1-04` | Lập Kế hoạch Triển khai (`PLAN.md`) | Xuất bản `PLAN.md` với lộ trình 3 Phase chuẩn hóa, bảng phân rã chi tiết 37 màn hình Google Stitch thành 5 Batches và kế hoạch 6 Sprints. | [x] Hoàn tất |
 | `TSK-P1-05` | Khởi tạo Repository GitHub (`webhoctienganh`) | Tạo GitHub repository `namvnp3008/webhoctienganh`, cấu hình remote origin và đẩy toàn bộ tài liệu, kiến trúc, kế hoạch dự án lên GitHub. | [x] Hoàn tất |
+| `TSK-P1-06` | Khởi động Chu trình /startcycle & Đặc tả Kỹ thuật | Xuất bản `Technical_Specification.md` v1.0, tích hợp mục tiêu triển khai Database trên Supabase và Backend trên Render qua MCP. | [x] Hoàn tất |
 
 ---
 
@@ -157,7 +158,7 @@ flowchart LR
 | Task ID | Nhiệm Vụ | Mô Tả Chi Tiết & Đầu Ra | Trạng Thái |
 |---|---|---|:---:|
 | `TSK-P3-05` | Khởi tạo Backend NestJS & Docker Environment | Khởi tạo NestJS monorepo, Docker Compose (PostgreSQL 16, Redis 7, MinIO/Localstack S3). | [ ] Chưa bắt đầu |
-| `TSK-P3-06` | Khởi tạo Prisma ORM & Database Migrations | Viết schema Prisma đầy đủ theo `TECH_ARCHITECTURE.md`, chạy migration khởi tạo toàn bộ bảng và quan hệ. | [ ] Chưa bắt đầu |
+| `TSK-P3-06` | Khởi tạo Prisma ORM & Supabase Database Migration | Viết schema Prisma đầy đủ theo `TECH_ARCHITECTURE.md`, khởi tạo PostgreSQL trên Supabase qua MCP, áp dụng migration DDL khởi tạo toàn bộ 13 bảng quan hệ. | [ ] Chưa bắt đầu |
 | `TSK-P3-07` | Module Xác thực (Auth Module) | Đăng ký, đăng nhập JWT (Access + Refresh token), Google OAuth2, Password Hashing với bcrypt. | [ ] Chưa bắt đầu |
 | `TSK-P3-08` | Phân quyền RBAC & `TeacherScopeGuard` | Viết Guards phân quyền Học sinh vs Giáo viên; viết `TeacherScopeGuard` đảm bảo giáo viên chỉ truy cập dữ liệu lớp của mình. | [ ] Chưa bắt đầu |
 
@@ -207,7 +208,7 @@ flowchart LR
 | `TSK-P3-33` | Kiểm thử Tải & Hiệu năng Phòng thi | Kịch bản mô phỏng 500 thí sinh làm bài đồng thời với công cụ k6 / Artillery, tối ưu query PostgreSQL. | [ ] Chưa bắt đầu |
 | `TSK-P3-34` | Kiểm thử Bảo mật & IDOR Prevention | Rà soát kiểm tra rò rỉ đáp án, kiểm tra chéo quyền hạn truy cập dữ liệu giữa các giáo viên khác nhau. | [ ] Chưa bắt đầu |
 | `TSK-P3-35` | Kiểm thử E2E Toàn bộ Luồng Người dùng | Viết kiểm thử tự động Cypress/Playwright cho luồng: Đăng nhập → Thi thử → AI chấm nháp → Giáo viên xác nhận. | [ ] Chưa bắt đầu |
-| `TSK-P3-36` | Đóng gói CI/CD & Triển khai Staging | Cấu hình Docker multi-stage build, GitHub Actions CI/CD pipeline sẵn sàng release. | [ ] Chưa bắt đầu |
+| `TSK-P3-36` | Triển Khai Backend lên Render (Render MCP) | Khởi tạo Web Service trên Render qua MCP liên kết với repo `namvnp3008/webhoctienganh`, cấu hình biến môi trường kết nối Supabase và deploy release. | [ ] Chưa bắt đầu |
 
 ---
 

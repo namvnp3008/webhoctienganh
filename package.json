@@ -1,0 +1,13 @@
+{
+  "name": "webhoctienganh-root",
+  "version": "1.0.0",
+  "description": "Lumina English - Nền Tảng Luyện Thi Tiếng Anh & Chấm Điểm AI",
+  "scripts": {
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "build:backend": "cd backend && npm install && npx prisma generate && npm run build",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build": "npm run build:backend",
+    "start": "cd backend && npm run start:prod"
+  }
+}
