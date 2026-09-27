@@ -4,10 +4,11 @@ import { TestCatalog } from './features/test-catalog/TestCatalog';
 import { ExamRoom } from './features/exam-room/ExamRoom';
 import { DictationLab } from './features/dictation/DictationLab';
 import { PronunciationLab } from './features/pronunciation/PronunciationLab';
+import { EnrolledClasses } from './features/classes/EnrolledClasses';
 import { AuthModal } from './features/auth/AuthModal';
 
 export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<'catalog' | 'dictation' | 'pronunciation'>('catalog');
+  const [currentTab, setCurrentTab] = useState<'catalog' | 'dictation' | 'pronunciation' | 'classes'>('catalog');
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -65,6 +66,12 @@ export const App: React.FC = () => {
             )}
             {currentTab === 'dictation' && <DictationLab />}
             {currentTab === 'pronunciation' && <PronunciationLab />}
+            {currentTab === 'classes' && (
+              <EnrolledClasses
+                user={user}
+                onOpenTest={(testId) => setActiveExamId(testId)}
+              />
+            )}
           </>
         )}
       </main>

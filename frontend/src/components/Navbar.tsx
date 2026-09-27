@@ -74,6 +74,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Mic className="w-4 h-4" />
             Luyện Phát Âm AI
           </button>
+
+          <button
+            onClick={() => setCurrentTab('classes')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              currentTab === 'classes'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            Lớp Học Của Tôi
+          </button>
         </nav>
 
         {/* Right Auth & Quota */}
