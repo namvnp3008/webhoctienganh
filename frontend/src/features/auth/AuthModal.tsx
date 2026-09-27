@@ -243,7 +243,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
+
+        {/* Quick Demo Switcher */}
+        <div className="mt-5 pt-4 border-t border-slate-800 text-center space-y-2">
+          <p className="text-[11px] text-slate-400 font-semibold">Tài khoản thử nghiệm nhanh (1-Click):</p>
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogin(true);
+                setEmail('student.minh@example.com');
+                setPassword('Lumina@2026');
+              }}
+              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700 transition-colors"
+            >
+              Học Viên
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogin(true);
+                setEmail('teacher.sarah@lumina.edu.vn');
+                setPassword('Lumina@2026');
+              }}
+              className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] border border-amber-500/30 transition-colors"
+            >
+              Giáo Viên (ADM-01)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogin(true);
+                setEmail('owner@lumina-english.vn');
+                setPassword('Lumina@2026');
+              }}
+              className="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-[11px] border border-indigo-500/30 transition-colors"
+            >
+              Admin / Owner
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
+

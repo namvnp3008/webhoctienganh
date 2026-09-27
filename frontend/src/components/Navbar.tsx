@@ -101,43 +101,55 @@ export const Navbar: React.FC<NavbarProps> = ({
             Lớp Học (STU-17)
           </button>
 
-          <button
-            onClick={() => setCurrentTab('grading')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              currentTab === 'grading'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <CheckSquare className="w-3.5 h-3.5" />
-            Chấm Bài (ADM-10)
-          </button>
+          {/* Teacher & Admin Tabs - Only shown when logged in with admin role */}
+          {user && (user.role === 'admin' || user.isOwner) && (
+            <>
+              <div className="w-px h-5 bg-slate-800 mx-1" />
+              <button
+                onClick={() => setCurrentTab('grading')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  currentTab === 'grading'
+                    ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
+                    : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
+                }`}
+              >
+                <CheckSquare className="w-3.5 h-3.5" />
+                Chấm Bài (ADM-10)
+              </button>
 
-          <button
-            onClick={() => setCurrentTab('admin')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              currentTab === 'admin'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Award className="w-3.5 h-3.5 text-indigo-400" />
-            Admin Hub (ADM)
-          </button>
+              <button
+                onClick={() => setCurrentTab('admin')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  currentTab === 'admin'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'
+                }`}
+              >
+                <Award className="w-3.5 h-3.5" />
+                Admin Hub (ADM)
+              </button>
+            </>
+          )}
         </nav>
 
         {/* Right Auth & Quota */}
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              <button
-                onClick={onOpenProfile}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
-                title="Hồ Sơ & Hạn Mức (STU-18)"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                <span>AI Quota: {user.dailyAiQuota ?? 20}/20</span>
-              </button>
+              {user.role === 'admin' ? (
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold">
+                  <span>Giáo Viên / Admin</span>
+                </div>
+              ) : (
+                <button
+                  onClick={onOpenProfile}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
+                  title="Hồ Sơ & Hạn Mức (STU-18)"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>AI Quota: {user.dailyAiQuota ?? 20}/20</span>
+                </button>
+              )}
               <div
                 onClick={onOpenProfile}
                 className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
@@ -167,6 +179,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
         </div>
+
       </div>
     </header>
   );
