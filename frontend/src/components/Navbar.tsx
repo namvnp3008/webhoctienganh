@@ -7,6 +7,7 @@ interface NavbarProps {
   user: any;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenProfile: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -15,6 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   user,
   onOpenAuth,
   onLogout,
+  onOpenProfile,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#0F172A]/90 backdrop-blur-md border-b border-slate-800">
@@ -110,31 +112,50 @@ export const Navbar: React.FC<NavbarProps> = ({
             <CheckSquare className="w-3.5 h-3.5" />
             Chấm Bài (ADM-10)
           </button>
-        </nav>
 
+          <button
+            onClick={() => setCurrentTab('admin')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              currentTab === 'admin'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5 text-indigo-400" />
+            Admin Hub (ADM)
+          </button>
+        </nav>
 
         {/* Right Auth & Quota */}
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+              <button
+                onClick={onOpenProfile}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
+                title="Hồ Sơ & Hạn Mức (STU-18)"
+              >
                 <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
                 <span>AI Quota: {user.dailyAiQuota ?? 20}/20</span>
-              </div>
-              <div className="flex items-center gap-2">
+              </button>
+              <div
+                onClick={onOpenProfile}
+                className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
+                title="Xem Hồ Sơ Cá Nhân (STU-18)"
+              >
                 <div className="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-300 font-bold text-xs">
                   {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <span className="hidden lg:inline text-sm font-medium text-slate-300">
                   {user.fullName}
                 </span>
-                <button
-                  onClick={onLogout}
-                  className="text-xs text-slate-400 hover:text-rose-400 underline ml-2"
-                >
-                  Đăng xuất
-                </button>
               </div>
+              <button
+                onClick={onLogout}
+                className="text-xs text-slate-400 hover:text-rose-400 underline ml-2"
+              >
+                Đăng xuất
+              </button>
             </div>
           ) : (
             <button

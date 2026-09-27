@@ -144,6 +144,18 @@ Giao diện người dùng được tích hợp toàn bộ các Token từ Googl
 7. **`TeacherGradingRoom.tsx` (`ADM-10`, `ADM-11`, `ADM-12`):**
    - Hàng đợi bài nộp chờ chấm lọc theo kỹ năng và trạng thái.
    - Màn hình chấm bài Writing & Speaking: load bản nháp gợi ý từ AI, thanh trượt chấm điểm 4 tiêu chí Rubric (bước nhảy 0.5 Band), khung nhận xét của giáo viên và nút hoàn tất công bố điểm.
+8. **`UserProfileModal.tsx` (`STU-18`):**
+   - Xem thông tin cá nhân, phân quyền tài khoản (Học viên vs Giáo viên).
+   - Thẻ đo hạn mức `daily_ai_quota` còn lại trong ngày (20 lượt/ngày).
+   - Thiết lập mục tiêu học tập (Target Band Score 6.0 - 8.5) và thống kê lịch sử làm bài.
+9. **`AdminPortal.tsx` (`ADM-02`, `ADM-03`, `ADM-04`, `ADM-05`, `ADM-09`, `ADM-15`, `ADM-18`, `ADM-19`):**
+   - **ADM-02 (Dashboard):** Thống kê KPI tổng học sinh, đề xuất bản, lượt thi trong tháng, bài thi chờ chấm.
+   - **ADM-03 / ADM-04 (Quản lý & Tạo đề thi):** Tạo đề thi mới, phân loại kỹ năng, điều chỉnh thời lượng và bật/tắt hiển thị đáp án.
+   - **ADM-09 (Import Excel):** Trình nhập câu hỏi hàng loạt bằng JSON/CSV template.
+   - **ADM-15 (Học sinh & Cấp lượt thi):** Quản lý danh sách học viên và form cấp thêm lượt thi (+1) khi gặp sự cố.
+   - **ADM-18 (Quản trị giáo viên):** Cấp tài khoản giáo viên mới và quản lý khóa/mở tài khoản.
+   - **ADM-19 (Cài đặt hệ thống):** Cấu hình hạn mức AI mặc định, chính sách dọn dẹp ghi âm 30 ngày và xem nhật ký Audit Logs.
+
 
 ---
 

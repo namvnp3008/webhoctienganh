@@ -7,14 +7,17 @@ import { DictationLab } from './features/dictation/DictationLab';
 import { PronunciationLab } from './features/pronunciation/PronunciationLab';
 import { EnrolledClasses } from './features/classes/EnrolledClasses';
 import { TeacherGradingRoom } from './features/teacher-grading/TeacherGradingRoom';
+import { AdminPortal } from './features/admin/AdminPortal';
 import { AuthModal } from './features/auth/AuthModal';
+import { UserProfileModal } from './features/auth/UserProfileModal';
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<
-    'catalog' | 'speaking' | 'dictation' | 'pronunciation' | 'classes' | 'grading'
+    'catalog' | 'speaking' | 'dictation' | 'pronunciation' | 'classes' | 'grading' | 'admin'
   >('catalog');
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -50,6 +53,7 @@ export const App: React.FC = () => {
           user={user}
           onOpenAuth={() => setIsAuthOpen(true)}
           onLogout={handleLogout}
+          onOpenProfile={() => setIsProfileOpen(true)}
         />
       )}
 
@@ -83,10 +87,10 @@ export const App: React.FC = () => {
               />
             )}
             {currentTab === 'grading' && <TeacherGradingRoom />}
+            {currentTab === 'admin' && <AdminPortal />}
           </>
         )}
       </main>
-
 
       {/* Footer */}
       {!activeExamId && (
@@ -108,8 +112,16 @@ export const App: React.FC = () => {
         onClose={() => setIsAuthOpen(false)}
         onSuccess={handleAuthSuccess}
       />
+
+      {/* Profile Modal (STU-18) */}
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        user={user}
+      />
     </div>
   );
 };
 
 export default App;
+
