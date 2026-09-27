@@ -215,16 +215,17 @@ flowchart LR
 
 ## 3. KẾ HOẠCH TRIỂN KHAI SPRINT (SPRINT MAPPING)
 
-| Sprint | Thời Lượng | Trọng Tâm Nhiệm Vụ | Mục Tiêu & Cột Mốc Bàn Giao (Milestone) |
-|---|:---:|---|---|
-| **Sprint 1** | 2 tuần | `TSK-P1-01` -> `TSK-P1-04`<br>`TSK-P2-00` -> `TSK-P2-12` | Hoàn tất Planning; Tạo Design System Stitch; Hoàn thành thiết kế Batch 1 & Batch 2 trên Google Stitch (12 màn hình cốt lõi). |
-| **Sprint 2** | 2 tuần | `TSK-P2-13` -> `TSK-P2-38`<br>`TSK-P3-01` -> `TSK-P3-04` | Hoàn thành trọn vẹn 37/37 màn hình trên Google Stitch; Thiết lập xong thư viện React UI Components & Design Tokens. |
-| **Sprint 3** | 2 tuần | `TSK-P3-05` -> `TSK-P3-14` | Xong Backend NestJS Auth, Prisma DB, Exam Attempt Engine; Ghép giao diện Phòng thi trực tuyến React (Exam Room). |
-| **Sprint 4** | 2 tuần | `TSK-P3-15` -> `TSK-P3-21` | Hoàn thiện BullMQ, Azure Speech STT, Gemini Rubric; Ghép Phòng thi Speaking & Phòng chấm bài Rubric của giáo viên. |
-| **Sprint 5** | 2 tuần | `TSK-P3-22` -> `TSK-P3-27` | Hoàn thiện Phòng Luyện phát âm (Pronunciation Lab) & Nghe chép (Dictation Lab); Kiểm soát hạn mức AI mỗi ngày. |
-| **Sprint 6** | 2 tuần | `TSK-P3-28` -> `TSK-P3-36` | Hoàn thiện Quản lý Lớp học, cấp lượt thi, Cron job xoá audio 30 ngày, Kiểm thử tải 500 CCU, UAT và đóng gói release. |
+| Sprint | Thời Lượng | Trọng Tâm Nhiệm Vụ | Mục Tiêu & Cột Mốc Bàn Giao (Milestone) | Trạng Thái Sprint |
+|---|:---:|---|---|:---:|
+| **Sprint 1** | 2 tuần | `TSK-P1-01` -> `TSK-P1-04`<br>`TSK-P2-00` -> `TSK-P2-12` | Hoàn tất Planning; Tạo Design System Stitch; Hoàn thành thiết kế Batch 1 & Batch 2 trên Google Stitch (12 màn hình cốt lõi). | [x] Hoàn tất |
+| **Sprint 2** | 2 tuần | `TSK-P2-13` -> `TSK-P2-38`<br>`TSK-P3-01` -> `TSK-P3-04` | Hoàn thành trọn vẹn 37/37 màn hình trên Google Stitch; Thiết lập xong thư viện React UI Components & Design Tokens. | [x] Hoàn tất |
+| **Sprint 3** | 2 tuần | `TSK-P3-05` -> `TSK-P3-14` | Xong Backend NestJS Auth, Prisma DB, Exam Attempt Engine; Ghép giao diện Phòng thi trực tuyến React (Exam Room). | [x] Hoàn tất |
+| **Sprint 4** | 2 tuần | `TSK-P3-15` -> `TSK-P3-21` | Hoàn thiện BullMQ, Azure Speech STT, Gemini Rubric; Ghép Phòng thi Speaking & Phòng chấm bài Rubric của giáo viên. | [x] Hoàn tất |
+| **Sprint 5** | 2 tuần | `TSK-P3-22` -> `TSK-P3-27` | Hoàn thiện Phòng Luyện phát âm (Pronunciation Lab) & Nghe chép (Dictation Lab); Kiểm soát hạn mức AI mỗi ngày. | [x] Hoàn tất |
+| **Sprint 6** | 2 tuần | `TSK-P3-28` -> `TSK-P3-36` | Hoàn thiện Quản lý Lớp học, cấp lượt thi, Cron job xoá audio 30 ngày, Kiểm thử tải 500 CCU, UAT và đóng gói release. | [x] Hoàn tất |
 
 ---
+
 
 ## 4. TIÊU CHUẨN HOÀN THÀNH (DEFINITION OF DONE - DOD)
 
