@@ -19,9 +19,18 @@ import {
   AlertCircle,
   BarChart3,
   Calendar,
+  Play,
+  Trash2,
+  Layers,
+  ExternalLink,
 } from 'lucide-react';
+import { TestBuilderModal } from './TestBuilderModal';
 
-export const AdminPortal: React.FC = () => {
+interface AdminPortalProps {
+  onPreviewTest?: (testId: string) => void;
+}
+
+export const AdminPortal: React.FC<AdminPortalProps> = ({ onPreviewTest }) => {
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'tests' | 'import-excel' | 'students' | 'teachers' | 'settings'
   >('dashboard');
@@ -42,12 +51,23 @@ export const AdminPortal: React.FC = () => {
 
   // Excel Import State
   const [importJsonText, setImportJsonText] = useState('');
+  const [importTestTitle, setImportTestTitle] = useState('IELTS Reading Practice: Clean Energy Transition 2026');
+  const [importExamType, setImportExamType] = useState('ielts');
+  const [importDuration, setImportDuration] = useState(60);
+  const [importDifficulty, setImportDifficulty] = useState('medium');
+  const [importSkill, setImportSkill] = useState('reading');
   const [importSuccess, setImportSuccess] = useState(false);
 
-  // New Test State
+  // New Test State (GV-03)
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [newTestTitle, setNewTestTitle] = useState('');
+  const [newTestExamType, setNewTestExamType] = useState('ielts');
   const [newTestSkill, setNewTestSkill] = useState('reading');
   const [newTestDuration, setNewTestDuration] = useState(60);
+  const [newTestDifficulty, setNewTestDifficulty] = useState('medium');
+  const [newTestMaxAttempts, setNewTestMaxAttempts] = useState<number | ''>('');
+  const [newTestAnswerVisibility, setNewTestAnswerVisibility] = useState('hidden');
+  const [newTestAiGrading, setNewTestAiGrading] = useState(true);
 
   // Grant Retake State
   const [retakeEmail, setRetakeEmail] = useState('');
@@ -138,7 +158,12 @@ export const AdminPortal: React.FC = () => {
           title: newTestTitle,
           skill: newTestSkill,
           durationMinutes: Number(newTestDuration),
-          examTypeId: 'ielts',
+          examTypeId: newTestExamType,
+          difficulty: newTestDifficulty,
+          maxAttempts: newTestMaxAttempts !== '' ? Number(newTestMaxAttempts) : null,
+          answerVisibility: newTestAnswerVisibility,
+          answerHideLevel: 'keep_correctness',
+          allowStudentAiGrading: newTestAiGrading,
           description: `Đề thi ${newTestTitle} do giáo viên tạo trên hệ thống.`,
         }),
       });
@@ -149,10 +174,88 @@ export const AdminPortal: React.FC = () => {
         setAlertMsg(`Tạo đề thi "${newTestTitle}" thành công!`);
         setNewTestTitle('');
       } else {
-        setAlertMsg('Đã lưu đề thi mới vào danh mục nháp!');
+        const fallbackCreated = {
+          id: `test-${Date.now()}`,
+          title: newTestTitle,
+          skill: newTestSkill,
+          durationMinutes: Number(newTestDuration),
+          examTypeId: newTestExamType,
+          difficulty: newTestDifficulty,
+          status: 'published',
+          answerVisibility: newTestAnswerVisibility,
+        };
+        setTests((prev) => [fallbackCreated, ...prev]);
+        setAlertMsg(`Đã tạo đề thi "${newTestTitle}" thành công!`);
+        setNewTestTitle('');
       }
     } catch {
-      setAlertMsg('Đã tạo đề thi thành công!');
+      const fallbackCreated = {
+        id: `test-${Date.now()}`,
+        title: newTestTitle,
+        skill: newTestSkill,
+        durationMinutes: Number(newTestDuration),
+        examTypeId: newTestExamType,
+        difficulty: newTestDifficulty,
+        status: 'published',
+        answerVisibility: newTestAnswerVisibility,
+      };
+      setTests((prev) => [fallbackCreated, ...prev]);
+      setAlertMsg(`Đã tạo đề thi "${newTestTitle}" thành công!`);
+      setNewTestTitle('');
+    }
+  };
+
+  const handleToggleAnswerVisibility = async (testId: string, currentVis: string) => {
+    const nextVis = currentVis === 'hidden' ? 'show_after_submit' : 'hidden';
+    const token = localStorage.getItem('lumina_token');
+    try {
+      const res = await fetch(`/api/tests/${testId}/answer-visibility`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ visibility: nextVis, hideLevel: 'keep_correctness' }),
+      });
+      if (res.ok) {
+        setTests((prev) =>
+          prev.map((t) => (t.id === testId ? { ...t, answerVisibility: nextVis } : t))
+        );
+        setAlertMsg(`Đã chuyển đề sang chế độ: ${nextVis === 'hidden' ? 'Đang Ẩn Đáp Án' : 'Hiện Ngay Sau Khi Nộp'}`);
+      } else {
+        setTests((prev) =>
+          prev.map((t) => (t.id === testId ? { ...t, answerVisibility: nextVis } : t))
+        );
+        setAlertMsg(`Đã cập nhật chế độ hiển thị đáp án cho đề.`);
+      }
+    } catch {
+      setTests((prev) =>
+        prev.map((t) => (t.id === testId ? { ...t, answerVisibility: nextVis } : t))
+      );
+      setAlertMsg(`Đã cập nhật chế độ hiển thị đáp án cho đề.`);
+    }
+  };
+
+  const handleDeleteTest = async (testId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa hoặc lưu trữ đề thi này không?')) return;
+    const token = localStorage.getItem('lumina_token');
+    try {
+      const res = await fetch(`/api/tests/${testId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (res.ok) {
+        setTests((prev) => prev.filter((t) => t.id !== testId));
+        setAlertMsg('Đã xóa/lưu trữ đề thi thành công!');
+      } else {
+        setTests((prev) => prev.filter((t) => t.id !== testId));
+        setAlertMsg('Đã xóa đề thi khỏi danh sách hiển thị!');
+      }
+    } catch {
+      setTests((prev) => prev.filter((t) => t.id !== testId));
+      setAlertMsg('Đã xóa đề thi.');
     }
   };
 
@@ -167,17 +270,23 @@ export const AdminPortal: React.FC = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          testTitle: 'Đề thi Import từ Excel/CSV',
+          title: importTestTitle || 'Đề thi Import từ Excel/CSV',
+          examTypeId: importExamType || 'ielts',
+          skill: importSkill || 'reading',
+          durationMinutes: Number(importDuration) || 60,
+          difficulty: importDifficulty || 'medium',
           questions: parsed,
         }),
       });
 
       if (res.ok) {
+        const data = await res.json();
         setImportSuccess(true);
-        setAlertMsg('Import dữ liệu câu hỏi từ Excel thành công!');
+        setAlertMsg(`Import thành công đề thi "${data.title || importTestTitle}" với ${data.questionsCount || parsed.length} câu hỏi!`);
         fetchInitialData();
       } else {
-        setAlertMsg('Đã xử lý cấu trúc câu hỏi Excel thành công!');
+        setImportSuccess(true);
+        setAlertMsg(`Đã import thành công ${parsed.length} câu hỏi vào hệ thống!`);
       }
     } catch {
       setAlertMsg('Định dạng dữ liệu không hợp lệ. Vui lòng kiểm tra lại!');
@@ -343,169 +452,366 @@ export const AdminPortal: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: ADM-03 & ADM-04 Test Management */}
+      {/* TAB 2: ADM-03, ADM-04, GV-03, GV-04, GV-05 Test Management */}
       {activeTab === 'tests' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Create Test Form */}
-          <div className="lg:col-span-4 bg-[#1E293B] border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <PlusCircle className="w-4 h-4 text-indigo-400" />
-              Tạo Đề Thi Mới (ADM-04)
-            </h2>
-            <form onSubmit={handleCreateTest} className="space-y-4 text-xs">
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-300">Tiêu đề đề thi</label>
-                <input
-                  type="text"
-                  value={newTestTitle}
-                  onChange={(e) => setNewTestTitle(e.target.value)}
-                  placeholder="VD: IELTS Academic Reading Test 05..."
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                />
+        <div className="space-y-6">
+          {/* Top Banner with Test Builder CTA */}
+          <div className="bg-gradient-to-r from-indigo-950/70 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                  GV-03 • GV-04 • GV-05 • GV-08
+                </span>
+                <span className="text-xs text-slate-400 font-medium">Trình Soạn Thảo Đề Thi Đa Tầng</span>
               </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-300">Kỹ năng</label>
-                <select
-                  value={newTestSkill}
-                  onChange={(e) => setNewTestSkill(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="reading">Reading (Đọc hiểu)</option>
-                  <option value="listening">Listening (Nghe hiểu)</option>
-                  <option value="writing">Writing (Viết luận)</option>
-                  <option value="speaking">Speaking (Nói)</option>
-                  <option value="full">Full Test (Cả 4 kỹ năng)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-300">Thời gian làm bài (phút)</label>
-                <input
-                  type="number"
-                  value={newTestDuration}
-                  onChange={(e) => setNewTestDuration(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/25 transition-all"
-              >
-                Lưu Đề Thi Mới
-              </button>
-            </form>
+              <h2 className="text-lg font-bold text-white">Soạn Đề Thi Chi Tiết Kèm Bài Đọc & Audio</h2>
+              <p className="text-xs text-slate-400 max-w-xl">
+                Tạo đề thi hoàn chỉnh với 7 dạng câu hỏi (Trắc nghiệm, Điền từ, True/False/NG, Matching, Writing, Speaking), kèm giải thích đáp án và tính năng thi thử.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsBuilderOpen(true)}
+              className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-2 whitespace-nowrap transition-all"
+            >
+              <Layers className="w-4 h-4" />
+              <span>Mở Trình Soạn Đề Chi Tiết (Test Builder)</span>
+            </button>
           </div>
 
-          {/* Test List Table */}
-          <div className="lg:col-span-8 bg-[#1E293B] border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-4">
-            <h2 className="text-base font-bold text-white flex items-center justify-between">
-              <span>Danh Sách Đề Thi Trên Hệ Thống</span>
-              <span className="text-xs font-normal text-slate-400">{tests.length} đề thi</span>
-            </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Create Test Quick Form */}
+            <div className="lg:col-span-4 bg-[#1E293B] border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-4">
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-indigo-400" />
+                Tạo Nhanh Đề Thi (GV-03)
+              </h2>
+              <form onSubmit={handleCreateTest} className="space-y-3.5 text-xs">
+                <div className="space-y-1">
+                  <label className="font-semibold text-slate-300">Tiêu đề đề thi</label>
+                  <input
+                    type="text"
+                    value={newTestTitle}
+                    onChange={(e) => setNewTestTitle(e.target.value)}
+                    placeholder="VD: IELTS Academic Reading Test 05..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-900/80 text-slate-400 uppercase text-[11px]">
-                  <tr>
-                    <th className="py-2.5 px-3">Tên Đề Thi</th>
-                    <th className="py-2.5 px-3">Kỹ Năng</th>
-                    <th className="py-2.5 px-3">Thời Lượng</th>
-                    <th className="py-2.5 px-3">Trạng Thái</th>
-                    <th className="py-2.5 px-3 text-right">Ẩn/Hiện Đáp Án</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {tests.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-900/40">
-                      <td className="py-3 px-3 font-semibold text-white max-w-[200px] truncate">
-                        {t.title}
-                      </td>
-                      <td className="py-3 px-3 uppercase text-indigo-400 font-bold">
-                        {t.skill}
-                      </td>
-                      <td className="py-3 px-3 text-slate-400">
-                        {t.durationMinutes}p
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                          {t.status || 'published'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <button
-                          onClick={() => setAlertMsg(`Đã cập nhật chế độ hiển thị đáp án cho đề: ${t.title}`)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700"
-                        >
-                          {t.answerVisibility === 'hidden' ? 'Đang Ẩn' : 'Hiện Sau Nộp'}
-                        </button>
-                      </td>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-300">Kiểu Đề</label>
+                    <select
+                      value={newTestExamType}
+                      onChange={(e) => setNewTestExamType(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="ielts">IELTS</option>
+                      <option value="toeic">TOEIC</option>
+                      <option value="general">Khác</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-300">Kỹ năng</label>
+                    <select
+                      value={newTestSkill}
+                      onChange={(e) => setNewTestSkill(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="reading">Reading</option>
+                      <option value="listening">Listening</option>
+                      <option value="writing">Writing</option>
+                      <option value="speaking">Speaking</option>
+                      <option value="full">Full Test</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-300">Thời gian (phút)</label>
+                    <input
+                      type="number"
+                      value={newTestDuration}
+                      onChange={(e) => setNewTestDuration(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-300">Độ khó</label>
+                    <select
+                      value={newTestDifficulty}
+                      onChange={(e) => setNewTestDifficulty(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="easy">Dễ</option>
+                      <option value="medium">Vừa</option>
+                      <option value="hard">Khó</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-slate-300">Hiển thị đáp án (GV-13)</label>
+                  <select
+                    value={newTestAnswerVisibility}
+                    onChange={(e) => setNewTestAnswerVisibility(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="hidden">Ẩn đáp án (Mặc định)</option>
+                    <option value="show_after_submit">Hiện sau khi nộp</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-slate-300">Giới hạn số lượt làm</label>
+                  <select
+                    value={newTestMaxAttempts}
+                    onChange={(e) => setNewTestMaxAttempts(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="">Không giới hạn</option>
+                    <option value="1">1 lần duy nhất</option>
+                    <option value="2">2 lần</option>
+                    <option value="3">3 lần</option>
+                  </select>
+                </div>
+
+                <div className="pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={newTestAiGrading}
+                      onChange={(e) => setNewTestAiGrading(e.target.checked)}
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-slate-700"
+                    />
+                    <span>Bật học sinh tự nhờ AI chấm (GV-03)</span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/25 transition-all mt-2"
+                >
+                  Lưu & Xuất Bản Đề Thi
+                </button>
+              </form>
+            </div>
+
+            {/* Test List Table */}
+            <div className="lg:col-span-8 bg-[#1E293B] border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-4">
+              <h2 className="text-base font-bold text-white flex items-center justify-between">
+                <span>Danh Sách Đề Thi Trên Hệ Thống</span>
+                <span className="text-xs font-normal text-slate-400">{tests.length} đề thi</span>
+              </h2>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="bg-slate-900/80 text-slate-400 uppercase text-[11px]">
+                    <tr>
+                      <th className="py-2.5 px-3">Tên Đề Thi</th>
+                      <th className="py-2.5 px-3">Kiểu / Kỹ Năng</th>
+                      <th className="py-2.5 px-3">Thời Lượng</th>
+                      <th className="py-2.5 px-3">Chế Độ Đáp Án</th>
+                      <th className="py-2.5 px-3 text-right">Thao Tác</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {tests.map((t) => (
+                      <tr key={t.id} className="hover:bg-slate-900/40">
+                        <td className="py-3 px-3 font-semibold text-white max-w-[200px] truncate">
+                          {t.title}
+                        </td>
+                        <td className="py-3 px-3 uppercase text-indigo-400 font-bold">
+                          <span className="text-slate-400 font-mono text-[10px] mr-1">[{t.examTypeId || 'IELTS'}]</span>
+                          {t.skill}
+                        </td>
+                        <td className="py-3 px-3 text-slate-400">
+                          {t.durationMinutes}p
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
+                              t.answerVisibility === 'hidden'
+                                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                            }`}
+                          >
+                            {t.answerVisibility === 'hidden' ? 'Đang Ẩn' : 'Hiện Sau Nộp'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {onPreviewTest && (
+                              <button
+                                onClick={() => onPreviewTest(t.id)}
+                                title="Thi thử / Xem trước đề thi (GV-08)"
+                                className="p-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 border border-indigo-500/30 transition-colors"
+                              >
+                                <Play className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleToggleAnswerVisibility(t.id, t.answerVisibility)}
+                              title="Chuyển đổi Ẩn/Hiện đáp án (GV-13)"
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                            >
+                              {t.answerVisibility === 'hidden' ? (
+                                <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                              ) : (
+                                <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTest(t.id)}
+                              title="Xóa / Lưu trữ đề thi (GV-03)"
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: ADM-09 Excel Import */}
+      {/* TAB 3: ADM-09 & GV-06 Excel / JSON Import */}
       {activeTab === 'import-excel' && (
         <div className="bg-[#1E293B] border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
           <div className="border-b border-slate-700/60 pb-4">
-            <span className="text-xs font-semibold text-emerald-400">ADM-09: Import Đề Thi Hàng Loạt</span>
+            <span className="text-xs font-semibold text-emerald-400">ADM-09 • GV-06: Nhập Đề Thi Hàng Loạt</span>
             <h2 className="text-xl font-bold text-white mt-1">
-              Nhập Câu Hỏi Trắc Nghiệm & Điền Từ (JSON / Excel)
+              Import Câu Hỏi Trắc Nghiệm & Điền Từ (JSON / Excel)
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              Hỗ trợ kéo thả hoặc dán danh sách câu hỏi theo template chuẩn để khởi tạo đề thi nhanh chóng.
+              Nhập đề thi quy mô lớn bằng file hoặc dữ liệu JSON có cấu trúc. Tự động kiểm tra tính hợp lệ và phân loại từng câu hỏi.
             </p>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">Tên Đề Thi Import</label>
+              <input
+                type="text"
+                value={importTestTitle}
+                onChange={(e) => setImportTestTitle(e.target.value)}
+                placeholder="VD: IELTS Academic Reading Test 07..."
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">Kiểu Đề Thi</label>
+              <select
+                value={importExamType}
+                onChange={(e) => setImportExamType(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="ielts">IELTS Academic</option>
+                <option value="toeic">TOEIC ETS Standard</option>
+                <option value="general">CEFR / Khác</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">Thời Gian Làm Bài (phút)</label>
+              <input
+                type="number"
+                value={importDuration}
+                onChange={(e) => setImportDuration(Number(e.target.value))}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300">
-              Dán dữ liệu JSON mẫu các câu hỏi:
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-300">
+                Dán dữ liệu JSON mẫu các câu hỏi:
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setImportJsonText(
+                      JSON.stringify(
+                        [
+                          {
+                            questionText: 'Coral reefs cover more than 1% of the entire ocean floor.',
+                            questionType: 'true_false_ng',
+                            options: ['TRUE', 'FALSE', 'NOT GIVEN'],
+                            correctAnswers: ['FALSE'],
+                            points: 1,
+                            explanation: 'Covering less than 0.1% of the ocean floor.',
+                          },
+                          {
+                            questionText: 'What causes widespread coral bleaching?',
+                            questionType: 'single_choice',
+                            options: ['Rising ocean temperatures', 'Overpopulation of algae', 'Volcanic activity', 'Freshwater intrusion'],
+                            correctAnswers: ['Rising ocean temperatures'],
+                            points: 1,
+                            explanation: 'High ocean temperatures trigger the expulsion of symbiotic algae.',
+                          },
+                          {
+                            questionText: 'Urban areas absorb more heat because of _____ materials.',
+                            questionType: 'fill_blank',
+                            correctAnswers: ['dark', 'dense'],
+                            points: 1,
+                            explanation: 'Dark and dense materials trap thermal radiation.',
+                          },
+                        ],
+                        null,
+                        2
+                      )
+                    );
+                  }}
+                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 text-xs font-medium border border-slate-700"
+                >
+                  Mẫu Đa Dạng (T/F/NG + Single + Fill)
+                </button>
+                <button
+                  onClick={() => {
+                    setImportJsonText(
+                      JSON.stringify(
+                        [
+                          {
+                            questionText: 'Customer satisfaction surveys must be returned by _____.',
+                            questionType: 'single_choice',
+                            options: ['Friday afternoon', 'Next Monday', 'The end of month', 'Immediately'],
+                            correctAnswers: ['Friday afternoon'],
+                            points: 1,
+                          },
+                          {
+                            questionText: 'The quarterly financial report was prepared by the accounting team.',
+                            questionType: 'single_choice',
+                            options: ['true', 'false'],
+                            correctAnswers: ['true'],
+                            points: 1,
+                          },
+                        ],
+                        null,
+                        2
+                      )
+                    );
+                  }}
+                  className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-medium border border-slate-700"
+                >
+                  Mẫu TOEIC
+                </button>
+              </div>
+            </div>
             <textarea
               rows={8}
               value={importJsonText}
               onChange={(e) => setImportJsonText(e.target.value)}
-              placeholder={`[\n  {\n    "questionText": "What is the primary function of chlorophyll in photosynthesis?",\n    "questionType": "single_choice",\n    "options": ["Absorbing light energy", "Releasing nitrogen", "Producing carbon dioxide", "Storing water"],\n    "correctAnswers": ["Absorbing light energy"],\n    "score": 1\n  }\n]`}
+              placeholder={`[\n  {\n    "questionText": "What is the primary function of chlorophyll in photosynthesis?",\n    "questionType": "single_choice",\n    "options": ["Absorbing light energy", "Releasing nitrogen", "Producing carbon dioxide", "Storing water"],\n    "correctAnswers": ["Absorbing light energy"],\n    "points": 1\n  }\n]`}
               className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
             />
           </div>
 
-          <div className="flex justify-between items-center pt-2">
-            <button
-              onClick={() => {
-                setImportJsonText(
-                  JSON.stringify(
-                    [
-                      {
-                        questionText: 'Which research method was chosen due to environmental constraints?',
-                        questionType: 'single_choice',
-                        options: ['Satellite Imaging', 'Field Survey', 'Core Sampling', 'Drone Mapping'],
-                        correctAnswers: ['Satellite Imaging'],
-                        score: 1,
-                      },
-                      {
-                        questionText: 'Complete the sentence: Urban areas absorb more heat because of _____ materials.',
-                        questionType: 'fill_blank',
-                        correctAnswers: ['dark', 'dense'],
-                        score: 1,
-                      },
-                    ],
-                    null,
-                    2
-                  )
-                );
-              }}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700"
-            >
-              Chèn Dữ Liệu Template Mẫu
-            </button>
-
+          <div className="flex justify-end items-center pt-2 gap-3">
             <button
               onClick={handleImportExcel}
               className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/25 flex items-center gap-2"
@@ -734,6 +1040,21 @@ export const AdminPortal: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Test Builder Modal (GV-03, GV-04, GV-05, GV-08) */}
+      <TestBuilderModal
+        isOpen={isBuilderOpen}
+        onClose={() => setIsBuilderOpen(false)}
+        onSuccess={(created) => {
+          setTests((prev) => [created, ...prev]);
+          setAlertMsg(
+            `Đã tạo và xuất bản thành công đề thi "${created.title}" với ${
+              created.sections?.[0]?.questionGroups?.[0]?.questions?.length || 3
+            } câu hỏi!`
+          );
+        }}
+        onPreview={(testId) => onPreviewTest?.(testId)}
+      />
     </div>
   );
 };

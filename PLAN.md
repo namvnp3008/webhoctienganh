@@ -166,8 +166,8 @@ flowchart LR
 #### Stage 3.3: Lập Trình Phân Hệ Đề Thi & Phòng Thi (Exam Taking Engine)
 | Task ID | Nhiệm Vụ | Mô Tả Chi Tiết & Đầu Ra | Trạng Thái |
 |---|---|---|:---:|
-| `TSK-P3-09` | Backend Test Management API | API tạo đề, sửa cấu trúc 4 cấp (Test → Section → Group → Question), hỗ trợ 3 kiểu đề (IELTS, TOEIC, Khác). | [x] Hoàn tất |
-| `TSK-P3-10` | API Import Đề thi từ Excel | Dịch vụ đọc file Excel/CSV, validate dữ liệu từng dòng, lưu hàng loạt vào DB có transaction (`POST /api/tests/import-excel`). | [x] Hoàn tất |
+| `TSK-P3-09` | Backend Test Management API & Builder | API tạo đề, sửa cấu trúc 4 cấp (Test → Section → Group → Question), hỗ trợ 3 kiểu đề (IELTS, TOEIC, Khác), tích hợp Trình soạn đề `TestBuilderModal` (GV-03 -> GV-08). Báo cáo: `docs/EXAM_CREATION_VERIFICATION_REPORT_v1.0.md`. | [x] Hoàn tất |
+| `TSK-P3-10` | API Import Đề thi từ Excel / JSON | Dịch vụ đọc file Excel/CSV/JSON, validate dữ liệu từng dòng, tự động chuẩn hóa schema lồng nhau, lưu hàng loạt vào DB có transaction (`POST /api/tests/import-excel`). | [x] Hoàn tất |
 | `TSK-P3-11` | Backend Exam Attempt Engine | API `POST /attempts/start` (trừ lượt, set timer server), API `POST /attempts/:id/auto-save`, API `POST /attempts/:id/submit`. | [x] Hoàn tất |
 | `TSK-P3-12` | Bộ Lọc Bảo Vệ Đáp Án (`AnswerSanitizerInterceptor`) | Loại bỏ `correct_answers` và `explanation` khi đề ở chế độ Ẩn (`keep_correctness` hoặc `score_only`). | [x] Hoàn tất |
 | `TSK-P3-13` | Ghép Giao diện Phòng Thi React (`STU-06`, `STU-07`) | Tích hợp layout Split-view, bộ đếm ngược, Palette câu hỏi, auto-save hook, cảnh báo nộp bài. | [x] Hoàn tất |

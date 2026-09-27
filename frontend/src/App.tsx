@@ -87,7 +87,9 @@ export const App: React.FC = () => {
               />
             )}
             {currentTab === 'grading' && <TeacherGradingRoom />}
-            {currentTab === 'admin' && <AdminPortal />}
+            {currentTab === 'admin' && (
+              <AdminPortal onPreviewTest={(testId) => setActiveExamId(testId)} />
+            )}
           </>
         )}
       </main>

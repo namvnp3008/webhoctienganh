@@ -102,22 +102,25 @@ export const ExamRoom: React.FC<ExamRoomProps> = ({ testId, onExit, user }) => {
 
   const handleSubmit = () => {
     setShowSubmitModal(false);
-    // Simple simulated grading for demo client
-    const correctMap: Record<string, string> = {
-      'q-1': 'FALSE',
-      'q-2': 'TRUE',
-      'q-3': 'FALSE',
-    };
     let score = 0;
-    Object.keys(correctMap).forEach((qId) => {
-      if (answers[qId] === correctMap[qId]) score++;
+    const total = allQuestions.length || 1;
+
+    allQuestions.forEach((q: any) => {
+      const studentAns = (answers[q.id] || '').trim().toLowerCase();
+      const correctList = Array.isArray(q.correctAnswers)
+        ? q.correctAnswers.map((c: any) => String(c).trim().toLowerCase())
+        : [String(q.correctAnswer || '').trim().toLowerCase()];
+
+      if (correctList.includes(studentAns) && studentAns !== '') {
+        score++;
+      }
     });
 
-    const calculatedBand = (score / 3) * 9;
+    const calculatedBand = Math.min(9.0, Math.round(((score / total) * 9) * 2) / 2) || (score > 0 ? 5.0 : 1.0);
     setResult({
-      bandScore: Math.round(calculatedBand * 2) / 2 || 6.5,
+      bandScore: calculatedBand,
       correctCount: score,
-      totalQuestions: 3,
+      totalQuestions: total,
     });
   };
 
@@ -256,25 +259,37 @@ export const ExamRoom: React.FC<ExamRoomProps> = ({ testId, onExit, user }) => {
                         </button>
                       </div>
 
-                      {/* Options Radio pills */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
-                        {q.options?.map((opt: string) => {
-                          const isSelected = answers[q.id] === opt;
-                          return (
-                            <button
-                              key={opt}
-                              onClick={() => handleSelectAnswer(q.id, opt)}
-                              className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-center border ${
-                                isSelected
-                                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
-                                  : 'bg-slate-900/80 text-slate-300 border-slate-700 hover:border-slate-500'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      {/* Options Radio pills or Fill In Blank Input */}
+                      {Array.isArray(q.options) && q.options.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                          {q.options.map((opt: string) => {
+                            const isSelected = answers[q.id] === opt;
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => handleSelectAnswer(q.id, opt)}
+                                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-left border ${
+                                  isSelected
+                                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
+                                    : 'bg-slate-900/80 text-slate-300 border-slate-700 hover:border-slate-500'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="pt-2">
+                          <input
+                            type="text"
+                            value={answers[q.id] || ''}
+                            onChange={(e) => handleSelectAnswer(q.id, e.target.value)}
+                            placeholder="Gõ câu trả lời của bạn vào đây..."
+                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Param,
   Query,
   Body,
@@ -41,6 +42,27 @@ export class TestsController {
   @Post()
   async createTest(@CurrentUser('id') teacherId: string, @Body() body: any) {
     return this.testsService.create(teacherId, body);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Put(':id')
+  async updateTest(@Param('id') id: string, @Body() body: any) {
+    return this.testsService.update(id, body);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Delete(':id')
+  async deleteTest(@Param('id') id: string) {
+    return this.testsService.delete(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Post(':id/questions')
+  async addQuestion(@Param('id') id: string, @Body() body: any) {
+    return this.testsService.addQuestion(id, body);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

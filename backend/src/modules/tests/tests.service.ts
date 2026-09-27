@@ -63,19 +63,151 @@ export class TestsService {
   }
 
   async create(teacherId: string, data: any) {
+    const sectionsData = Array.isArray(data.sections) && data.sections.length > 0 ? {
+      create: data.sections.map((s: any, sIdx: number) => ({
+        title: s.title || `Section ${sIdx + 1}`,
+        instruction: s.instruction,
+        orderIndex: s.orderIndex || sIdx + 1,
+        durationMinutes: s.durationMinutes,
+        passageText: s.passageText,
+        audioUrl: s.audioUrl,
+        questionGroups: {
+          create: (s.questionGroups || [{ instruction: s.instruction || 'Answer the questions below', questions: s.questions || [] }]).map((g: any, gIdx: number) => ({
+            instruction: g.instruction || 'Answer the questions below',
+            passageText: g.passageText,
+            audioUrl: g.audioUrl,
+            imageUrl: g.imageUrl,
+            orderIndex: g.orderIndex || gIdx + 1,
+            questions: {
+              create: (g.questions || []).map((q: any, qIdx: number) => ({
+                type: q.type || q.questionType || 'single_choice',
+                content: q.content || q.questionText || `Question ${qIdx + 1}`,
+                options: q.options || [],
+                correctAnswers: q.correctAnswers || (q.correctAnswer ? [q.correctAnswer] : []),
+                points: q.points || q.score || 1.0,
+                explanation: q.explanation || '',
+                orderIndex: q.orderIndex || qIdx + 1,
+              })),
+            },
+          })),
+        },
+      })),
+    } : undefined;
+
     return this.prisma.test.create({
       data: {
         title: data.title,
-        description: data.description,
+        description: data.description || `Đề thi ${data.title} do giáo viên tạo trên hệ thống.`,
         examTypeId: data.examTypeId || 'ielts',
         skill: data.skill || 'full',
         difficulty: data.difficulty || 'medium',
-        durationMinutes: data.durationMinutes || 60,
-        coverUrl: data.coverUrl,
+        durationMinutes: Number(data.durationMinutes) || 60,
+        maxAttempts: data.maxAttempts ? Number(data.maxAttempts) : null,
+        visibility: data.visibility || 'public',
+        allowStudentAiGrading: data.allowStudentAiGrading !== false,
+        maxAiGradingsPerAnswer: Number(data.maxAiGradingsPerAnswer) || 2,
+        coverUrl: data.coverUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
         status: data.status || 'published',
         answerVisibility: data.answerVisibility || 'hidden',
         answerHideLevel: data.answerHideLevel || 'keep_correctness',
+        answerReleaseAt: data.answerReleaseAt ? new Date(data.answerReleaseAt) : null,
         createdBy: teacherId,
+        sections: sectionsData,
+      },
+      include: {
+        examType: true,
+        sections: {
+          include: {
+            questionGroups: {
+              include: {
+                questions: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async update(testId: string, data: any) {
+    const updateData: any = {};
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.skill !== undefined) updateData.skill = data.skill;
+    if (data.difficulty !== undefined) updateData.difficulty = data.difficulty;
+    if (data.durationMinutes !== undefined) updateData.durationMinutes = Number(data.durationMinutes);
+    if (data.maxAttempts !== undefined) updateData.maxAttempts = data.maxAttempts ? Number(data.maxAttempts) : null;
+    if (data.visibility !== undefined) updateData.visibility = data.visibility;
+    if (data.allowStudentAiGrading !== undefined) updateData.allowStudentAiGrading = Boolean(data.allowStudentAiGrading);
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.answerVisibility !== undefined) updateData.answerVisibility = data.answerVisibility;
+    if (data.answerHideLevel !== undefined) updateData.answerHideLevel = data.answerHideLevel;
+
+    return this.prisma.test.update({
+      where: { id: testId },
+      data: updateData,
+    });
+  }
+
+  async delete(testId: string) {
+    const attemptsCount = await this.prisma.attempt.count({ where: { testId } });
+    if (attemptsCount > 0) {
+      // Per PRD GV-03: Soft-delete/hide if attempts exist
+      return this.prisma.test.update({
+        where: { id: testId },
+        data: { status: 'hidden' },
+      });
+    }
+    return this.prisma.test.delete({ where: { id: testId } });
+  }
+
+  async addQuestion(testId: string, data: any) {
+    // Ensure test has at least one section and question group
+    let section = await this.prisma.section.findFirst({
+      where: { testId },
+      orderBy: { orderIndex: 'asc' },
+    });
+
+    if (!section) {
+      section = await this.prisma.section.create({
+        data: {
+          testId,
+          title: 'Section 1: General Comprehension',
+          orderIndex: 1,
+          instruction: 'Answer the questions according to the instructions provided.',
+        },
+      });
+    }
+
+    let group = await this.prisma.questionGroup.findFirst({
+      where: { sectionId: section.id },
+      orderBy: { orderIndex: 'asc' },
+    });
+
+    if (!group) {
+      group = await this.prisma.questionGroup.create({
+        data: {
+          sectionId: section.id,
+          instruction: 'Answer the questions below',
+          orderIndex: 1,
+        },
+      });
+    }
+
+    const questionCount = await this.prisma.question.count({
+      where: { groupId: group.id },
+    });
+
+    return this.prisma.question.create({
+      data: {
+        groupId: group.id,
+        type: data.type || data.questionType || 'single_choice',
+        content: data.content || data.questionText || 'Câu hỏi mới',
+        options: data.options || [],
+        correctAnswers: data.correctAnswers || (data.correctAnswer ? [data.correctAnswer] : []),
+        points: data.points || data.score || 1.0,
+        explanation: data.explanation || '',
+        orderIndex: questionCount + 1,
       },
     });
   }
@@ -165,7 +297,41 @@ export class TestsService {
   }
 
   async importExcel(teacherId: string, payload: any) {
-    const { title, examTypeId = 'ielts', skill = 'full', durationMinutes = 60, difficulty = 'medium', sections = [] } = payload;
+    const title = payload.title || payload.testTitle || 'Đề thi Import từ Excel/CSV';
+    const examTypeId = payload.examTypeId || 'ielts';
+    const skill = payload.skill || 'full';
+    const durationMinutes = Number(payload.durationMinutes) || 60;
+    const difficulty = payload.difficulty || 'medium';
+
+    // Normalize sections / questions
+    let normalizedSections: any[] = [];
+    if (Array.isArray(payload.sections) && payload.sections.length > 0) {
+      normalizedSections = payload.sections;
+    } else if (Array.isArray(payload.questions) && payload.questions.length > 0) {
+      // Flat list of questions imported from Excel/CSV
+      normalizedSections = [
+        {
+          title: payload.sectionTitle || 'Section 1: General Comprehension',
+          instruction: payload.sectionInstruction || 'Read the questions and select the best answer.',
+          passageText: payload.passageText || null,
+          audioUrl: payload.audioUrl || null,
+          questionGroups: [
+            {
+              instruction: 'Answer the questions below',
+              questions: payload.questions,
+            },
+          ],
+        },
+      ];
+    } else {
+      normalizedSections = [
+        {
+          title: 'Section 1: Reading Comprehension',
+          instruction: 'Read the instructions and answer the questions below.',
+          questionGroups: [{ instruction: 'Answer the questions below', questions: [] }],
+        },
+      ];
+    }
     
     return this.prisma.$transaction(async (tx) => {
       const test = await tx.test.create({
@@ -176,14 +342,16 @@ export class TestsService {
           durationMinutes,
           difficulty,
           status: 'published',
-          answerVisibility: 'show_after_submit',
-          answerHideLevel: 'keep_correctness',
+          answerVisibility: payload.answerVisibility || 'show_after_submit',
+          answerHideLevel: payload.answerHideLevel || 'keep_correctness',
           createdBy: teacherId,
         },
       });
 
-      for (let sIdx = 0; sIdx < sections.length; sIdx++) {
-        const s = sections[sIdx];
+      let totalQuestionsImported = 0;
+
+      for (let sIdx = 0; sIdx < normalizedSections.length; sIdx++) {
+        const s = normalizedSections[sIdx];
         const section = await tx.section.create({
           data: {
             testId: test.id,
@@ -212,15 +380,16 @@ export class TestsService {
             await tx.question.create({
               data: {
                 groupId: group.id,
-                type: q.type || 'multiple_choice',
-                content: q.content,
+                type: q.type || q.questionType || 'single_choice',
+                content: q.content || q.questionText || `Question ${qIdx + 1}`,
                 options: q.options || [],
-                correctAnswers: q.correctAnswers || [q.correctAnswer],
-                points: q.points || 1.0,
+                correctAnswers: q.correctAnswers || (q.correctAnswer ? [q.correctAnswer] : []),
+                points: q.points || q.score || 1.0,
                 explanation: q.explanation || '',
                 orderIndex: qIdx + 1,
               },
             });
+            totalQuestionsImported++;
           }
         }
       }
@@ -228,7 +397,9 @@ export class TestsService {
       return {
         message: 'Import đề thi từ file thành công',
         testId: test.id,
-        sectionsCount: sections.length,
+        title: test.title,
+        sectionsCount: normalizedSections.length,
+        questionsCount: totalQuestionsImported,
       };
     });
   }
