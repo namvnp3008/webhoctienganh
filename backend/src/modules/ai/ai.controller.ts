@@ -31,4 +31,26 @@ export class AIController {
   ) {
     return this.aiService.evaluatePronunciation(userId, body);
   }
+
+  @Post('evaluate-speaking')
+  async evaluateSpeaking(
+    @CurrentUser('id') userId: string,
+    @Body()
+    body: {
+      topic: string;
+      part: number;
+      transcript?: string;
+      audioDurationSec?: number;
+    },
+  ) {
+    return this.aiService.evaluateSpeaking(userId, body);
+  }
+
+  @Post('storage/presigned-url')
+  async getStoragePresignedUrl(
+    @CurrentUser('id') userId: string,
+    @Body() body: { fileName: string; fileType: string },
+  ) {
+    return this.aiService.getStoragePresignedUrl(userId, body);
+  }
 }

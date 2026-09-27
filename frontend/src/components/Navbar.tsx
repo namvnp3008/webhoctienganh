@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Headphones, Mic, Award, LogIn, User, Sparkles } from 'lucide-react';
+import { BookOpen, Headphones, Mic, Award, LogIn, User, Sparkles, GraduationCap, CheckSquare } from 'lucide-react';
 
 interface NavbarProps {
   currentTab: string;
@@ -38,55 +38,80 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800">
+        <nav className="hidden lg:flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800">
           <button
             onClick={() => setCurrentTab('catalog')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               currentTab === 'catalog'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="w-3.5 h-3.5" />
             Kho Đề Thi
           </button>
 
           <button
+            onClick={() => setCurrentTab('speaking')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              currentTab === 'speaking'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <Mic className="w-3.5 h-3.5" />
+            Thi Nói AI (STU-09)
+          </button>
+
+          <button
             onClick={() => setCurrentTab('dictation')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               currentTab === 'dictation'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
-            <Headphones className="w-4 h-4" />
+            <Headphones className="w-3.5 h-3.5" />
             Luyện Nghe Chép
           </button>
 
           <button
             onClick={() => setCurrentTab('pronunciation')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               currentTab === 'pronunciation'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
-            <Mic className="w-4 h-4" />
+            <Sparkles className="w-3.5 h-3.5" />
             Luyện Phát Âm AI
           </button>
 
           <button
             onClick={() => setCurrentTab('classes')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               currentTab === 'classes'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
-            Lớp Học Của Tôi
+            <GraduationCap className="w-3.5 h-3.5" />
+            Lớp Học (STU-17)
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('grading')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              currentTab === 'grading'
+                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <CheckSquare className="w-3.5 h-3.5" />
+            Chấm Bài (ADM-10)
           </button>
         </nav>
+
 
         {/* Right Auth & Quota */}
         <div className="flex items-center gap-3">

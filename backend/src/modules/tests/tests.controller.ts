@@ -63,4 +63,16 @@ export class TestsController {
   async seedSample(@CurrentUser('id') teacherId: string) {
     return this.testsService.seedSampleTests(teacherId);
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Post('import-excel')
+  async importExcel(@CurrentUser('id') teacherId: string, @Body() body: any) {
+    return this.testsService.importExcel(teacherId, body);
+  }
+
+  @Get(':id/analytics')
+  async getAnalytics(@Param('id') id: string) {
+    return this.testsService.getAnalytics(id);
+  }
 }

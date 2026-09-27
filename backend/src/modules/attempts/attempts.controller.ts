@@ -51,4 +51,39 @@ export class AttemptsController {
   ) {
     return this.attemptsService.getAttemptResult(userId, attemptId);
   }
+
+  @Post('grant-retake')
+  async grantRetake(
+    @CurrentUser('id') teacherId: string,
+    @Body() body: { studentEmail: string; testId: string },
+  ) {
+    return this.attemptsService.grantRetake(teacherId, body);
+  }
+
+  @Get('admin/grading-queue')
+  async getGradingQueue(
+    @CurrentUser('id') teacherId: string,
+  ) {
+    return this.attemptsService.getGradingQueue(teacherId);
+  }
+
+  @Post('admin/submit-review')
+  async submitReview(
+    @CurrentUser('id') teacherId: string,
+    @Body()
+    body: {
+      attemptAnswerId: string;
+      totalScore: number;
+      feedback: string;
+      skill: string;
+      scores?: any[];
+    },
+  ) {
+    return this.attemptsService.submitReview(teacherId, body.attemptAnswerId, body);
+  }
+
+  @Post('admin/cleanup-audio')
+  async cleanupAudio() {
+    return this.attemptsService.cleanupExpiredAudio();
+  }
 }

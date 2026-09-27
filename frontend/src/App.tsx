@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { TestCatalog } from './features/test-catalog/TestCatalog';
 import { ExamRoom } from './features/exam-room/ExamRoom';
+import { SpeakingSimulator } from './features/speaking/SpeakingSimulator';
 import { DictationLab } from './features/dictation/DictationLab';
 import { PronunciationLab } from './features/pronunciation/PronunciationLab';
 import { EnrolledClasses } from './features/classes/EnrolledClasses';
+import { TeacherGradingRoom } from './features/teacher-grading/TeacherGradingRoom';
 import { AuthModal } from './features/auth/AuthModal';
 
 export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<'catalog' | 'dictation' | 'pronunciation' | 'classes'>('catalog');
+  const [currentTab, setCurrentTab] = useState<
+    'catalog' | 'speaking' | 'dictation' | 'pronunciation' | 'classes' | 'grading'
+  >('catalog');
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -64,6 +68,12 @@ export const App: React.FC = () => {
                 user={user}
               />
             )}
+            {currentTab === 'speaking' && (
+              <SpeakingSimulator
+                user={user}
+                onExit={() => setCurrentTab('catalog')}
+              />
+            )}
             {currentTab === 'dictation' && <DictationLab />}
             {currentTab === 'pronunciation' && <PronunciationLab />}
             {currentTab === 'classes' && (
@@ -72,9 +82,11 @@ export const App: React.FC = () => {
                 onOpenTest={(testId) => setActiveExamId(testId)}
               />
             )}
+            {currentTab === 'grading' && <TeacherGradingRoom />}
           </>
         )}
       </main>
+
 
       {/* Footer */}
       {!activeExamId && (

@@ -126,4 +126,60 @@ export class AIService {
       tipVi: 'Khẩu hình âm /θ/ trong từ "think": Đặt đầu lưỡi giữa hai hàm răng và đẩy luồng hơi nhẹ nhàng ra ngoài.',
     };
   }
+
+  async evaluateSpeaking(
+    userId: string,
+    data: { topic: string; part: number; transcript?: string; audioDurationSec?: number },
+  ) {
+    await this.checkAndDecrementQuota(userId);
+
+    const fluencyScore = 7.0;
+    const lexicalScore = 7.5;
+    const grammarScore = 7.0;
+    const pronunciationScore = 7.5;
+    const overallBand = 7.5;
+
+    return {
+      skill: 'speaking',
+      part: data.part || 2,
+      topic: data.topic,
+      overallBand,
+      criterionScores: {
+        fluencyAndCoherence: fluencyScore,
+        lexicalResource: lexicalScore,
+        grammaticalRange: grammarScore,
+        pronunciation: pronunciationScore,
+      },
+      feedback:
+        'Bài nói tự nhiên, duy trì được độ trôi chảy xuyên suốt các ý. Từ vựng theo chủ đề được sử dụng linh hoạt với một số cụm Collocation nâng cao. Cần chú ý nhấn trọng âm câu chính xác hơn ở các từ mang nghĩa quan trọng.',
+      metrics: {
+        speechRateWpm: 135,
+        pauseCount: 4,
+        fillerWordsCount: 2,
+      },
+    };
+  }
+
+  async getStoragePresignedUrl(
+    userId: string,
+    data: { fileName: string; fileType: string },
+  ) {
+    const timestamp = Date.now();
+    const cleanFileName = data.fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const objectKey = `audio/${userId}/${timestamp}-${cleanFileName}`;
+    const uploadUrl = `https://storage.luminaenglish.com/upload/${objectKey}?token=temp_upload_${timestamp}`;
+    const publicUrl = `https://storage.luminaenglish.com/public/${objectKey}`;
+
+    const deleteAfter = new Date();
+    deleteAfter.setDate(deleteAfter.getDate() + 30); // 30-day retention
+
+    return {
+      uploadUrl,
+      publicUrl,
+      objectKey,
+      deleteAfter,
+      expiresInSeconds: 300,
+    };
+  }
 }
+

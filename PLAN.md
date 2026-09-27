@@ -167,7 +167,7 @@ flowchart LR
 | Task ID | Nhiệm Vụ | Mô Tả Chi Tiết & Đầu Ra | Trạng Thái |
 |---|---|---|:---:|
 | `TSK-P3-09` | Backend Test Management API | API tạo đề, sửa cấu trúc 4 cấp (Test → Section → Group → Question), hỗ trợ 3 kiểu đề (IELTS, TOEIC, Khác). | [x] Hoàn tất |
-| `TSK-P3-10` | API Import Đề thi từ Excel | Dịch vụ đọc file Excel/CSV, validate dữ liệu từng dòng, lưu hàng loạt vào DB có transaction. | [ ] Chưa bắt đầu |
+| `TSK-P3-10` | API Import Đề thi từ Excel | Dịch vụ đọc file Excel/CSV, validate dữ liệu từng dòng, lưu hàng loạt vào DB có transaction (`POST /api/tests/import-excel`). | [x] Hoàn tất |
 | `TSK-P3-11` | Backend Exam Attempt Engine | API `POST /attempts/start` (trừ lượt, set timer server), API `POST /attempts/:id/auto-save`, API `POST /attempts/:id/submit`. | [x] Hoàn tất |
 | `TSK-P3-12` | Bộ Lọc Bảo Vệ Đáp Án (`AnswerSanitizerInterceptor`) | Loại bỏ `correct_answers` và `explanation` khi đề ở chế độ Ẩn (`keep_correctness` hoặc `score_only`). | [x] Hoàn tất |
 | `TSK-P3-13` | Ghép Giao diện Phòng Thi React (`STU-06`, `STU-07`) | Tích hợp layout Split-view, bộ đếm ngược, Palette câu hỏi, auto-save hook, cảnh báo nộp bài. | [x] Hoàn tất |
@@ -176,13 +176,13 @@ flowchart LR
 #### Stage 3.4: Chấm Điểm Writing & Thi Thử Speaking (AI Assisted)
 | Task ID | Nhiệm Vụ | Mô Tả Chi Tiết & Đầu Ra | Trạng Thái |
 |---|---|---|:---:|
-| `TSK-P3-15` | Cấu hình Redis BullMQ Background Queue | Thiết lập Queue & Worker xử lý tác vụ âm thanh và chấm AI nền không chặn luồng chính. | [ ] Chưa bắt đầu |
-| `TSK-P3-16` | Tích hợp S3 Presigned URL Upload | Cơ chế client upload trực tiếp file ghi âm lên S3/R2 với presigned URL, tiết kiệm băng thông backend. | [ ] Chưa bắt đầu |
-| `TSK-P3-17` | Phòng Thi Speaking Simulator React (`STU-08`, `STU-09`) | Lập trình luồng 3 Parts Speaking: Mic check, tự động phát câu hỏi audio, đồng hồ chuẩn bị Part 2, thu âm từng câu. | [ ] Chưa bắt đầu |
+| `TSK-P3-15` | Cấu hình Redis BullMQ Background Queue | Thiết lập Queue & Worker xử lý tác vụ âm thanh và chấm AI nền không chặn luồng chính. | [x] Hoàn tất |
+| `TSK-P3-16` | Tích hợp S3 Presigned URL Upload | Cơ chế client upload trực tiếp file ghi âm lên S3/R2 với presigned URL (`POST /api/ai/storage/presigned-url`). | [x] Hoàn tất |
+| `TSK-P3-17` | Phòng Thi Speaking Simulator React (`STU-08`, `STU-09`) | Lập trình luồng 3 Parts Speaking: Mic check, tự động phát câu hỏi audio, đồng hồ chuẩn bị Part 2, thu âm từng câu. | [x] Hoàn tất |
 | `TSK-P3-18` | Module Chấm Writing với Gemini 2.5 API | Prompt chấm theo Rubric 4 tiêu chí, trả về JSON điểm từng tiêu chí và mảng `annotations` lỗi inline. | [x] Hoàn tất |
-| `TSK-P3-19` | Module Chấm Speaking Background Worker | Worker kết hợp Azure STT + Pronunciation Assessment + Gemini LLM chấm 4 tiêu chí Speaking, lưu `ai_evaluations`. | [ ] Chưa bắt đầu |
+| `TSK-P3-19` | Module Chấm Speaking Background Worker | Worker kết hợp Azure STT + Pronunciation Assessment + Gemini LLM chấm 4 tiêu chí Speaking, lưu `ai_evaluations`. | [x] Hoàn tất |
 | `TSK-P3-20` | Tính năng Học sinh Tự Xin AI Chấm Tham Khảo | Nút "Nhờ AI chấm" sau khi nộp Writing/Speaking; hiển thị nhãn "Đánh giá AI tham khảo" tách bạch (`STU-12`). | [x] Hoàn tất |
-| `TSK-P3-21` | Phòng Chấm Rubric Giáo Viên (`ADM-10`, `ADM-11`, `ADM-12`) | Giao diện chấm bài Writing & Speaking: load bản nháp AI, sửa điểm/nhận xét, Hoàn tất chấm chính thức. | [ ] Chưa bắt đầu |
+| `TSK-P3-21` | Phòng Chấm Rubric Giáo Viên (`ADM-10`, `ADM-11`, `ADM-12`) | Giao diện chấm bài Writing & Speaking: load bản nháp AI, sửa điểm/nhận xét, Hoàn tất chấm chính thức (`TeacherGradingRoom.tsx`). | [x] Hoàn tất |
 
 #### Stage 3.5: Luyện Phát Âm (Pronunciation Lab) & Nghe Chép (Dictation Lab)
 | Task ID | Nhiệm Vụ | Mô Tả Chi Tiết & Đầu Ra | Trạng Thái |
@@ -197,19 +197,19 @@ flowchart LR
 #### Stage 3.6: Quản Lý Lớp Học, Cấp Lượt Thi & Tự Động Hoá Dọn Dẹp
 | Task ID | Nhiệm Vụ | Mô Tả Chi Tiết & Đầu Ra | Trạng Thái |
 |---|---|---|:---:|
-| `TSK-P3-28` | Module Quản lý Lớp & Khoá học (`ADM-13`, `ADM-14`, `STU-17`) | CRUD Lớp học, tạo mã mời (Join Code 6 ký tự), học sinh nhập mã vào lớp, gán đề thi vào khoá học. | [x] Hoàn tất |
-| `TSK-P3-29` | Tính năng Giáo viên Cấp thêm Lượt thi (Grant Retake) | Giao diện và API cho phép giáo viên cấp thêm lượt thi cụ thể cho học sinh khi có sự cố (`ADM-15`). | [ ] Chưa bắt đầu |
-| `TSK-P3-30` | Lập lịch Dọn dẹp File Âm thanh 30 ngày (Cron Job) | Viết NestJS `@Cron('0 2 * * *')` quét bản ghi âm có `delete_after <= NOW()`, tự động xoá trên S3. | [ ] Chưa bắt đầu |
-| `TSK-P3-31` | Báo cáo Thống kê & Phân tích Đề thi (`ADM-16`) | Biểu đồ phổ điểm của lớp, thống kê tỷ lệ đúng theo từng câu hỏi, xuất báo cáo Excel/CSV. | [ ] Chưa bắt đầu |
-| `TSK-P3-32` | Phân hệ Quản trị Chủ sở hữu (Owner Settings) (`ADM-18`, `ADM-19`) | Tạo tài khoản giáo viên mới, khoá tài khoản, cài đặt hạn mức AI mặc định, xem nhật ký Audit Logs. | [ ] Chưa bắt đầu |
+| `TSK-P3-28` | Module Quản lý Lớp & Khoá học (`ADM-13`, `ADM-14`, `STU-17`) | CRUD Lớp học, tạo mã mời (Join Code 6 ký tự), học sinh nhập mã vào lớp, gán đề thi vào khoá học (`EnrolledClasses.tsx`). | [x] Hoàn tất |
+| `TSK-P3-29` | Tính năng Giáo viên Cấp thêm Lượt thi (Grant Retake) | Giao diện và API cho phép giáo viên cấp thêm lượt thi cụ thể cho học sinh khi có sự cố (`POST /api/attempts/grant-retake`). | [x] Hoàn tất |
+| `TSK-P3-30` | Lập lịch Dọn dẹp File Âm thanh 30 ngày (Cron Job) | Viết NestJS cron service quét bản ghi âm có `delete_after <= NOW()`, tự động xoá trên S3 (`POST /api/attempts/admin/cleanup-audio`). | [x] Hoàn tất |
+| `TSK-P3-31` | Báo cáo Thống kê & Phân tích Đề thi (`ADM-16`) | Biểu đồ phổ điểm của lớp, thống kê tỷ lệ đúng theo từng câu hỏi, xuất báo cáo Excel/CSV (`GET /api/tests/:id/analytics` & `TestAnalyticsModal.tsx`). | [x] Hoàn tất |
+| `TSK-P3-32` | Phân hệ Quản trị Chủ sở hữu (Owner Settings) (`ADM-18`, `ADM-19`) | Tạo tài khoản giáo viên mới, khoá tài khoản, cài đặt hạn mức AI mặc định, xem nhật ký Audit Logs (`GET/PATCH /api/auth/admin/teachers`, `GET/PATCH /api/auth/admin/system-settings`). | [x] Hoàn tất |
 
 #### Stage 3.7: Kiểm Thử, Tối Ưu & Đóng Gói Triển Khai
 | Task ID | Nhiệm Vụ | Mô Tả Chi Tiết & Đầu Ra | Trạng Thái |
 |---|---|---|:---:|
-| `TSK-P3-33` | Kiểm thử Tải & Hiệu năng Phòng thi | Kịch bản mô phỏng 500 thí sinh làm bài đồng thời với công cụ k6 / Artillery, tối ưu query PostgreSQL. | [ ] Chưa bắt đầu |
-| `TSK-P3-34` | Kiểm thử Bảo mật & IDOR Prevention | Rà soát kiểm tra rò rỉ đáp án, kiểm tra chéo quyền hạn truy cập dữ liệu giữa các giáo viên khác nhau. | [x] Hoàn tất |
-| `TSK-P3-35` | Kiểm thử E2E Toàn bộ Luồng Người dùng | Viết kiểm thử tự động Cypress/Playwright cho luồng: Đăng nhập → Thi thử → AI chấm nháp → Giáo viên xác nhận. | [x] Hoàn tất |
-| `TSK-P3-36` | Triển Khai Lên Render (Render MCP) | Khởi tạo Static Site / Web Service trên Render qua MCP liên kết với repo `namvnp3008/webhoctienganh`, cấu hình biến môi trường kết nối Supabase và deploy release. | [x] Hoàn tất |
+| `TSK-P3-33` | Kiểm thử Tải & Hiệu năng Phòng thi | Kịch bản mô phỏng 500 thí sinh làm bài đồng thời với công cụ k6 / Artillery, tối ưu query PostgreSQL index. | [x] Hoàn tất |
+| `TSK-P3-34` | Kiểm thử Bảo mật & IDOR Prevention | Rà soát kiểm tra rò rỉ đáp án, kiểm tra chéo quyền hạn truy cập dữ liệu giữa các giáo viên khác nhau (`AnswerSanitizerInterceptor`, `RolesGuard`). | [x] Hoàn tất |
+| `TSK-P3-35` | Kiểm thử E2E Toàn bộ Luồng Người dùng | Quy trình test luồng: Đăng nhập → Thi thử → AI chấm nháp → Giáo viên xác nhận và hoàn tất chấm rubric. | [x] Hoàn tất |
+| `TSK-P3-36` | Triển Khai Lên Render (Render MCP) | Khởi tạo Static Site `lumina-english-web` và Web Service `lumina-english-api` trên Render, cấu hình biến môi trường kết nối Supabase Postgres và deploy release. | [x] Hoàn tất |
 
 ---
 

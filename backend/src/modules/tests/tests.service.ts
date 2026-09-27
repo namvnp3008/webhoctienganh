@@ -163,4 +163,174 @@ export class TestsService {
 
     return { message: 'Đã khởi tạo đề thi mẫu thành công', test };
   }
+
+  async importExcel(teacherId: string, payload: any) {
+    const { title, examTypeId = 'ielts', skill = 'full', durationMinutes = 60, difficulty = 'medium', sections = [] } = payload;
+    
+    return this.prisma.$transaction(async (tx) => {
+      const test = await tx.test.create({
+        data: {
+          title,
+          examTypeId,
+          skill,
+          durationMinutes,
+          difficulty,
+          status: 'published',
+          answerVisibility: 'show_after_submit',
+          answerHideLevel: 'keep_correctness',
+          createdBy: teacherId,
+        },
+      });
+
+      for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+        const s = sections[sIdx];
+        const section = await tx.section.create({
+          data: {
+            testId: test.id,
+            title: s.title || `Section ${sIdx + 1}`,
+            instruction: s.instruction,
+            orderIndex: sIdx + 1,
+            passageText: s.passageText,
+            audioUrl: s.audioUrl,
+          },
+        });
+
+        const groups = s.questionGroups || [{ questions: s.questions || [] }];
+        for (let gIdx = 0; gIdx < groups.length; gIdx++) {
+          const g = groups[gIdx];
+          const group = await tx.questionGroup.create({
+            data: {
+              sectionId: section.id,
+              instruction: g.instruction || 'Answer the questions below',
+              orderIndex: gIdx + 1,
+            },
+          });
+
+          const questions = g.questions || [];
+          for (let qIdx = 0; qIdx < questions.length; qIdx++) {
+            const q = questions[qIdx];
+            await tx.question.create({
+              data: {
+                groupId: group.id,
+                type: q.type || 'multiple_choice',
+                content: q.content,
+                options: q.options || [],
+                correctAnswers: q.correctAnswers || [q.correctAnswer],
+                points: q.points || 1.0,
+                explanation: q.explanation || '',
+                orderIndex: qIdx + 1,
+              },
+            });
+          }
+        }
+      }
+
+      return {
+        message: 'Import đề thi từ file thành công',
+        testId: test.id,
+        sectionsCount: sections.length,
+      };
+    });
+  }
+
+  async getAnalytics(testId: string) {
+    const test = await this.prisma.test.findUnique({
+      where: { id: testId },
+      include: {
+        attempts: {
+          where: { status: 'submitted' },
+          include: {
+            answers: {
+              include: { question: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!test) {
+      throw new NotFoundException('Không tìm thấy đề thi');
+    }
+
+    const attempts = test.attempts;
+    const totalAttempts = attempts.length;
+
+    if (totalAttempts === 0) {
+      return {
+        testId,
+        title: test.title,
+        totalAttempts: 0,
+        averageScore: 0,
+        highestScore: 0,
+        lowestScore: 0,
+        scoreDistribution: {
+          '0-30%': 0,
+          '30-50%': 0,
+          '50-70%': 0,
+          '70-85%': 0,
+          '85-100%': 0,
+        },
+        questionAccuracy: [],
+      };
+    }
+
+    const scores = attempts.map((a) => Number(a.totalScore || 0));
+    const avgScore = Number((scores.reduce((sum, s) => sum + s, 0) / totalAttempts).toFixed(2));
+    const maxScore = Math.max(...scores);
+    const minScore = Math.min(...scores);
+
+    const distribution = {
+      '0-30%': 0,
+      '30-50%': 0,
+      '50-70%': 0,
+      '70-85%': 0,
+      '85-100%': 0,
+    };
+
+    scores.forEach((s) => {
+      const pct = (s / 10) * 100; // Normalized 10 scale
+      if (pct < 30) distribution['0-30%']++;
+      else if (pct < 50) distribution['30-50%']++;
+      else if (pct < 70) distribution['50-70%']++;
+      else if (pct < 85) distribution['70-85%']++;
+      else distribution['85-100%']++;
+    });
+
+    // Question Accuracy Ranking
+    const questionStats: Record<string, { content: string; correct: number; total: number }> = {};
+    attempts.forEach((a) => {
+      a.answers.forEach((ans) => {
+        if (!questionStats[ans.questionId]) {
+          questionStats[ans.questionId] = {
+            content: ans.question.content,
+            correct: 0,
+            total: 0,
+          };
+        }
+        questionStats[ans.questionId].total++;
+        if (ans.isCorrect) {
+          questionStats[ans.questionId].correct++;
+        }
+      });
+    });
+
+    const questionAccuracy = Object.entries(questionStats).map(([qId, stat]) => ({
+      questionId: qId,
+      content: stat.content,
+      accuracyRate: Math.round((stat.correct / (stat.total || 1)) * 100),
+      totalAttempts: stat.total,
+    })).sort((a, b) => a.accuracyRate - b.accuracyRate); // hardest questions first
+
+    return {
+      testId,
+      title: test.title,
+      totalAttempts,
+      averageScore: avgScore,
+      highestScore: maxScore,
+      lowestScore: minScore,
+      scoreDistribution: distribution,
+      questionAccuracy,
+    };
+  }
 }
+

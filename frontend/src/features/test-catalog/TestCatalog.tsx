@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Clock, FileText, CheckCircle2, ChevronRight, Sparkles, Filter } from 'lucide-react';
+import { Search, Clock, FileText, CheckCircle2, ChevronRight, Sparkles, Filter, BarChart2 } from 'lucide-react';
+import { TestAnalyticsModal } from './TestAnalyticsModal';
 
 interface TestCatalogProps {
   onSelectTest: (testId: string) => void;
@@ -11,6 +12,7 @@ export const TestCatalog: React.FC<TestCatalogProps> = ({ onSelectTest, user }) 
   const [loading, setLoading] = useState(true);
   const [selectedSkill, setSelectedSkill] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [analyticsTest, setAnalyticsTest] = useState<{ id: string; title: string } | null>(null);
 
   // Fallback initial tests if API is not yet running locally
   const defaultSampleTests = [
@@ -177,18 +179,36 @@ export const TestCatalog: React.FC<TestCatalogProps> = ({ onSelectTest, user }) 
               </div>
             </div>
 
-            <div className="p-6 pt-0">
+            <div className="p-6 pt-0 flex items-center gap-2">
               <button
                 onClick={() => onSelectTest(test.id)}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-800 group-hover:bg-indigo-600 text-slate-200 group-hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 group-hover:bg-indigo-600 text-slate-200 group-hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow"
               >
                 <span>Vào Phòng Thi</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button
+                onClick={() => setAnalyticsTest({ id: test.id, title: test.title })}
+                title="Xem Phân Tích & Phổ Điểm (ADM-16)"
+                className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-indigo-400 border border-slate-700/60 transition-colors"
+              >
+                <BarChart2 className="w-4 h-4" />
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* ADM-16 Analytics Modal */}
+      {analyticsTest && (
+        <TestAnalyticsModal
+          testId={analyticsTest.id}
+          testTitle={analyticsTest.title}
+          isOpen={!!analyticsTest}
+          onClose={() => setAnalyticsTest(null)}
+        />
+      )}
     </div>
   );
 };
+
